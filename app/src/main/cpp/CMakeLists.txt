@@ -4,7 +4,8 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.4.1)
-
+PROJECT(native)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 
 add_library( # Sets the name of the library.
@@ -13,8 +14,6 @@ add_library( # Sets the name of the library.
              SHARED
 
              native-lib.cpp )
-include_directories(${CMAKE_SOURCE_DIR}/openssl)
-include_directories(${CMAKE_SOURCE_DIR}/libuv)
 
 
 find_library( # Sets the name of the path variable.
@@ -23,7 +22,6 @@ find_library( # Sets the name of the path variable.
 
 add_subdirectory(uWS)
 
-file(GLOB_RECURSE Head "*.h")
 
 target_link_libraries( # Specifies the target library.
                        native-lib

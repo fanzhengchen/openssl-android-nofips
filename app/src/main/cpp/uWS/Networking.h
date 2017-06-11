@@ -5,9 +5,9 @@
 #define NETWORKING_UWS_H
 
 #include "Libuv.h"
-#include "opensslv.h"
+#include "openssl/opensslv.h"
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-//#define SSL_CTX_up_ref(x) x->references++
+#define SSL_CTX_up_ref(x) x->references++
 #define SSL_up_ref(x) x->references++
 #endif
 
@@ -68,7 +68,7 @@ inline SOCKET dup(SOCKET socket) {
 #endif
 
 #include "Backend.h"
-#include "ssl.h"
+#include "openssl/ssl.h"
 #include <csignal>
 #include <vector>
 #include <string>

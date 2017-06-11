@@ -1,6 +1,6 @@
 #include "Hub.h"
 #include "HTTPSocket.h"
-#include "sha.h"
+#include "openssl/sha.h"
 
 namespace uWS {
 
