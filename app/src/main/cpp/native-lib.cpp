@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string>
+#include "uWS/uWS.h"
 
 extern "C"
 JNIEXPORT jstring JNICALL
