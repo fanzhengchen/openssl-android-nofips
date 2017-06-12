@@ -18,7 +18,7 @@ public class WebSocketClient {
 
     public native void send(String message);
 
-    public native void send(byte[] bytes);
+    public native void sendBytes(byte[] bytes);
 
     public native void disconnect();
 

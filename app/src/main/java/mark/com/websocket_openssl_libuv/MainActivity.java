@@ -16,18 +16,20 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private WebSocketClient mClient;
 
     TextView mTextView;
+    TextView mBinaryTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mTextView = (TextView) findViewById(R.id.sample_text);
+        mBinaryTextView = (TextView) findViewById(R.id.send_binary_text);
 
         mTextView.setText(System.getenv("os.arch") + " " + Build.DEVICE);
 
 
-
         mTextView.setOnClickListener(this);
+        mBinaryTextView.setOnClickListener(this);
 
         getClient().connect(WS_URI);
     }
@@ -35,7 +37,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
-        getClient().send("wwwwwwwwwwwwwwwwwwwwwwwww text text");
+        int id = v.getId();
+        if (id == R.id.sample_text) {
+            getClient().send("wwwwwwwwwwwwwwwwwwwwwwwww text text");
+        } else if (id == R.id.send_binary_text) {
+            byte[] bytes = "bbbbbbbbbbbbbbbbbbbbbbb".getBytes();
+            getClient().sendBytes(bytes);
+        }
     }
 
 

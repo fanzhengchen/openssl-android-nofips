@@ -19,12 +19,11 @@ static uv_work_t ws_conn_t;
 static uv_idle_t idle_t;
 static uWS::WebSocket<uWS::CLIENT> *webSocket;
 
+size_t sleep_time = 1;
+
 void connect_ws(uv_idle_t *handler) {
     LOGI("%d try to connect %d", __LINE__, uv_thread);
-    hub.connect(ws_uri, (void *) 1);
-    hub.getDefaultGroup<uWS::CLIENT>().startAutoPing(2000, "");
-    hub.run();
-    LOGI("after run");
+
 }
 
 void uv_init(void *) {
@@ -32,11 +31,33 @@ void uv_init(void *) {
     LOGE("%d uv_init", __LINE__);
     uvLoop = uv_loop_new();
 
-    uv_idle_init(uvLoop, &idle_t);
+    uv_idle_init(hub.getLoop(), &idle_t);
 
     uv_idle_start(&idle_t, connect_ws);
 
-    uv_run(uvLoop, UV_RUN_DEFAULT);
+    hub.connect(ws_uri, (void *) 1);
+    hub.getDefaultGroup<uWS::CLIENT>().startAutoPing(2000, "");
+    hub.run();
+//    uv_run(uvLoop, UV_RUN_DEFAULT);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_sendBytes(JNIEnv *env, jobject instance,
+                                                                   jbyteArray bytes_) {
+    jbyte *bytes = env->GetByteArrayElements(bytes_, NULL);
+
+    // TODO
+    const char *data = (char *) bytes;
+
+    if (webSocket != nullptr) {
+        LOGI("%d send binary data: %s", __LINE__, data);
+
+        webSocket->send(data, uWS::OpCode::BINARY);
+    }
+
+
+    env->ReleaseByteArrayElements(bytes_, bytes, 0);
 }
 
 extern "C"
@@ -54,21 +75,12 @@ Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_send__Ljava_lang_String_
     env->ReleaseStringUTFChars(message_, message);
 }
 
-JNIEXPORT void JNICALL
-Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_send__Lbyte_3_093_2(JNIEnv *env,
-                                                                            jobject instance,
-                                                                            jbyteArray bytes_) {
-    jbyte *bytes = env->GetByteArrayElements(bytes_, NULL);
-
-    env->ReleaseByteArrayElements(bytes_, bytes, 0);
-}
-
 extern "C"
 JNIEXPORT void JNICALL
 Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_disconnect(JNIEnv *env, jobject instance) {
 
-    // TODO
-    hub.getDefaultGroup<uWS::CLIENT>().close(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
+    hub.getDefaultGroup<uWS::CLIENT>().terminate();
+    //close(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
 }
 
 extern "C"
@@ -102,13 +114,15 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     hub.onError([](void *user) {
         LOGE("%d on error", __LINE__);
-        hub.getDefaultGroup<uWS::CLIENT>().close(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
+        hub.getDefaultGroup<uWS::CLIENT>().close();
+        //(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
     });
 
     hub.onDisconnection(
             [](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
                 LOGE("%d disconnection", __LINE__);
-                hub.getDefaultGroup<uWS::CLIENT>().close(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
+                hub.getDefaultGroup<uWS::CLIENT>().close();
+                //(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
             });
 
 
