@@ -1,72 +1,134 @@
 #include <jni.h>
 #include <string>
 #include "uWS/uWS.h"
-#include <unistd.h>
-#include <chrono>
 #include <android/log.h>
-#include <assert.h>
 
-extern "C"
-{
-#include <pthread.h>
-}
+char CLOSE_MESSAGE[] = "socket close";
 
-#define  LOG_TAG "fuck"
+#define  LOG_TAG __FILE__
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
-const int THREADS = 5;
 uWS::Hub hub;
 
 static JavaVM *jvm;
-static pthread_t pthread;
+static uv_thread_t uv_thread;
+const char *ws_uri;
+static uv_loop_t *uvLoop;
+static uv_work_t ws_conn_t;
+static uv_idle_t idle_t;
+static uWS::WebSocket<uWS::CLIENT> *webSocket;
 
-
-void *connect_ws(void *) {
-    LOGI("try to connect");
-    hub.connect("ws://192.168.3.21:20000/webSocket", (void *) 1);
+void connect_ws(uv_idle_t *handler) {
+    LOGI("%d try to connect %d", __LINE__, uv_thread);
+    hub.connect(ws_uri, (void *) 1);
+    hub.getDefaultGroup<uWS::CLIENT>().startAutoPing(2000, "");
     hub.run();
     LOGI("after run");
-    return NULL;
+}
+
+void uv_init(void *) {
+
+    LOGE("%d uv_init", __LINE__);
+    uvLoop = uv_loop_new();
+
+    uv_idle_init(uvLoop, &idle_t);
+
+    uv_idle_start(&idle_t, connect_ws);
+
+    uv_run(uvLoop, UV_RUN_DEFAULT);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_send__Ljava_lang_String_2(JNIEnv *env,
+                                                                                  jobject instance,
+                                                                                  jstring message_) {
+    const char *message = env->GetStringUTFChars(message_, 0);
+
+    if (webSocket != nullptr) {
+//        webSocket->se
+        webSocket->send(message, uWS::OpCode::TEXT);
+    }
+
+    env->ReleaseStringUTFChars(message_, message);
+}
+
+JNIEXPORT void JNICALL
+Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_send__Lbyte_3_093_2(JNIEnv *env,
+                                                                            jobject instance,
+                                                                            jbyteArray bytes_) {
+    jbyte *bytes = env->GetByteArrayElements(bytes_, NULL);
+
+    env->ReleaseByteArrayElements(bytes_, bytes, 0);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_disconnect(JNIEnv *env, jobject instance) {
+
+    // TODO
+    hub.getDefaultGroup<uWS::CLIENT>().close(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_connect(JNIEnv *env, jobject instance,
+                                                                jstring uri_) {
+    ws_uri = env->GetStringUTFChars(uri_, 0);
+
+    LOGE("%d connection init", __LINE__);
+
+    size_t len = env->GetStringLength(uri_);
+
+
+    LOGI("%d %s %zu %d", __LINE__, ws_uri, len, uv_thread);
+
+    uv_thread_create(&uv_thread, uv_init, NULL);
+
+    env->ReleaseStringUTFChars(uri_, ws_uri);
 }
 
 extern "C"
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env = NULL;
-    jint result = -1;
+    jint result = JNI_VERSION_1_4;
+
 
     hub.onConnection([](uWS::WebSocket<uWS::CLIENT> *ws, uWS::HttpRequest req) {
-        LOGI("connected");
+        LOGI("%d connected", __LINE__);
+        webSocket = ws;
     });
 
     hub.onError([](void *user) {
-        LOGE("%s", "on error");
+        LOGE("%d on error", __LINE__);
+        hub.getDefaultGroup<uWS::CLIENT>().close(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
     });
 
     hub.onDisconnection(
             [](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
-                LOGE("disconnection");
+                LOGE("%d disconnection", __LINE__);
+                hub.getDefaultGroup<uWS::CLIENT>().close(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
             });
 
-    hub.getDefaultGroup<uWS::CLIENT>().startAutoPing(2000, "");
 
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_4) != JNI_OK) {
         return -1;
     }
 
-    result = JNI_VERSION_1_4;
 
-    pthread_create(&pthread, NULL, connect_ws, NULL);
+    LOGI("jni on load");
+    hub.onMessage(
+            [](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length, uWS::OpCode opCode) {
+                LOGI("%d %s %d", __LINE__, message, opCode);
+            });
+
 
     return result;
 }
 
-extern "C"
-JNIEXPORT jstring JNICALL
-Java_mark_com_websocket_1openssl_1libuv_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    std::string hello = "Hello from C++";
 
-    return env->NewStringUTF(hello.c_str());
+extern "C"
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 }
+

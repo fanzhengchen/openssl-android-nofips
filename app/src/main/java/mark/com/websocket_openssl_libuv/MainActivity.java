@@ -1,29 +1,48 @@
 package mark.com.websocket_openssl_libuv;
 
+import android.app.Activity;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+import org.w3c.dom.Text;
 
-    // Used to load the 'native-lib' library on application startup.
-    static {
-        System.loadLibrary("native-lib");
-    }
+public class MainActivity extends Activity implements View.OnClickListener {
+
+
+    private static final String WS_URI = "ws://172.16.14.115:20000/webSocket";
+    private WebSocketClient mClient;
+
+    TextView mTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mTextView = (TextView) findViewById(R.id.sample_text);
 
-        // Example of a call to a native method
-        TextView tv = (TextView) findViewById(R.id.sample_text);
-        tv.setText(stringFromJNI());
+        mTextView.setText(System.getenv("os.arch") + " " + Build.DEVICE);
+
+
+
+        mTextView.setOnClickListener(this);
+
+        getClient().connect(WS_URI);
     }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
+
+    @Override
+    public void onClick(View v) {
+        getClient().send("wwwwwwwwwwwwwwwwwwwwwwwww text text");
+    }
+
+
+    public WebSocketClient getClient() {
+        if (mClient == null) {
+            mClient = new WebSocketClient();
+        }
+        return mClient;
+    }
 }
