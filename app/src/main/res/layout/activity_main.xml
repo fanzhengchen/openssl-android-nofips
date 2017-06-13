@@ -7,19 +7,28 @@
     <TextView
         android:id="@+id/sample_text"
         android:layout_width="100dp"
-        android:layout_height="wrap_content"
+        android:layout_height="200dp"
         android:background="@android:color/holo_green_light"
+        android:gravity="center"
         android:padding="20dp"
-        android:text="Hello World!" />
-
+        android:text="connect" />
 
     <TextView
-        android:id="@+id/send_binary_text"
-        android:layout_width="140dp"
+        android:id="@+id/send_plain_text"
+        android:layout_width="100dp"
         android:layout_height="200dp"
         android:background="@android:color/holo_red_light"
         android:gravity="center"
-        android:text="send binary data"
+        android:text="send plain text"
         app:layout_constraintStart_toEndOf="@id/sample_text" />
+
+    <TextView
+        android:id="@+id/send_binary_text"
+        android:layout_width="100dp"
+        android:layout_height="200dp"
+        android:background="@android:color/holo_blue_light"
+        android:gravity="center"
+        android:text="send binary data"
+        app:layout_constraintStart_toEndOf="@id/send_plain_text" />
 
 </android.support.constraint.ConstraintLayout>

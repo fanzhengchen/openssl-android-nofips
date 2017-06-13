@@ -6,7 +6,8 @@
 #include "Extensions.h"
 #include <functional>
 #include <stack>
-
+#include "Node.h"
+#include "Networking.h"
 namespace uWS {
 
 enum ListenOptions {
@@ -91,7 +92,9 @@ public:
     // same as listen(TRANSFERS), backwards compatible API for now
     void addAsync() {
         if (!async) {
-            NodeData::addAsync();
+            //NodeData::addAsync();
+            addAsync();
+
         }
     }
 
