@@ -11,7 +11,9 @@ char CLOSE_MESSAGE[] = "socket close";
 
 uWS::Hub hub;
 
-static JavaVM *jvm;
+static JavaVM *javaVM;
+static JNIEnv *jniEnv;
+static jobject jobj;
 static uv_thread_t uv_thread;
 const char *ws_uri;
 static uv_loop_t *uvLoop;
@@ -19,20 +21,33 @@ static uv_work_t ws_conn_t;
 static uv_idle_t idle_t;
 static uWS::WebSocket<uWS::CLIENT> *webSocket;
 static uv_async_t uv_async;
+uv_work_t uv_work;
 
 
-void run_hub(uv_async_t *handle) {
-    LOGI("%d before run hub", __LINE__);
-
-    LOGI("%d hub close: loop is null? %d", __LINE__, hub.getLoop() == nullptr);
-    uv_close((uv_handle_t *) handle, NULL);
+void do_work(uv_work_t *handle) {
+    hub.run();
 }
 
-void uv_init(void *) {
+void after_work(uv_work_t *handle, int status) {
+    LOGI("%d after work", __LINE__);
+}
 
-    LOGE("%d uv_init %d %d", __LINE__, uv_thread, uv_thread_self());
+void run_hun_in_queue(void *) {
+    uvLoop = uv_loop_new();
+    uv_queue_work(uvLoop, &uv_work, do_work, after_work);
+    uv_run(uvLoop, UV_RUN_ONCE);
+}
 
-    hub.run();
+
+void cb_to_jvm() {
+    JNIEnv *env;
+//    javaVM->GetEnv((void **)&env, JNI_VERSION_1_4);
+
+    javaVM->AttachCurrentThread(&env, NULL);
+
+    jclass clazz = env->GetObjectClass(jobj);
+
+    jmethodID methodID = env->GetMethodID(clazz, "onTextMessage", "(Ljava/lang/String;)V");
 
 }
 
@@ -81,17 +96,21 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_connect(JNIEnv *env, jobject instance,
                                                                 jstring uri_) {
-    ws_uri = env->GetStringUTFChars(uri_, 0);
+
+    env->GetJavaVM(&javaVM);
+    jobj = env->NewGlobalRef(instance);
 
     LOGE("%d connection init", __LINE__);
 
     size_t len = env->GetStringLength(uri_);
 
+    LOGI("%d %s %zu %ld", __LINE__, ws_uri, len, uv_thread);
 
-    LOGI("%d %s %zu %d", __LINE__, ws_uri, len, uv_thread);
-
-    hub.connect(ws_uri, (void *) 1);
-    uv_thread_create(&uv_thread, uv_init, NULL);
+    if (webSocket == nullptr) {
+        delete uvLoop;
+        hub.connect(ws_uri, (void *) 1);
+        uv_thread_create(&uv_thread, run_hun_in_queue, NULL);
+    }
 
     env->ReleaseStringUTFChars(uri_, ws_uri);
 }
@@ -139,5 +158,16 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
 extern "C"
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
+    delete uvLoop;
+    JNIEnv *env = NULL;
+    if (vm->GetEnv((void **) &env, JNI_VERSION_1_4) != JNI_OK) {
+        return;
+    }
+
+    if (env != NULL) {
+        env->DeleteGlobalRef(jobj);
+
+
+    }
 }
 

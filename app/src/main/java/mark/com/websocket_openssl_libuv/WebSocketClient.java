@@ -22,7 +22,7 @@ public class WebSocketClient {
 
     public native void disconnect();
 
-    private void onTextMessage(String message) {
+    void onTextMessage(String message) {
         if (mSocketListener != null) {
             mSocketListener.onTextMessage(message);
         }
