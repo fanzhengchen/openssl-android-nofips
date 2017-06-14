@@ -7,10 +7,28 @@
 
 #include "uWS.h"
 #include "jni.h"
+#include "uWS/Hub.h"
+
 
 class WebSocketManager {
 private:
-    JavaVM *jvm;
+    uWS::Hub *hub;
+    uWS::WebSocket<uWS::CLIENT> *webSocket;
+
+    std::function<void(uWS::WebSocket<uWS::CLIENT> *, uWS::HttpRequest)> connectionHandler;
+
+public:
+    ~WebSocketManager();
+
+    WebSocketManager();
+
+    uWS::Hub *getHub();
+
+    void setWebSocket(uWS::WebSocket<uWS::CLIENT> *ws);
+
+    void sendPlainText(const char *);
+
+    void sendBytes(const char *);
 };
 
 
