@@ -39,16 +39,22 @@ void run_hun_in_queue(void *) {
 }
 
 
-void cb_to_jvm() {
+void cb_to_jvm(const char *str) {
     JNIEnv *env;
 //    javaVM->GetEnv((void **)&env, JNI_VERSION_1_4);
 
-    javaVM->AttachCurrentThread(&env, NULL);
+    int status = javaVM->AttachCurrentThread(&env, NULL);
+
+    LOGI("%d call back to jvm attach current thread status %d", __LINE__, status);
 
     jclass clazz = env->GetObjectClass(jobj);
 
     jmethodID methodID = env->GetMethodID(clazz, "onTextMessage", "(Ljava/lang/String;)V");
 
+    jstring jstr = env->NewStringUTF(str);
+    env->CallVoidMethod(jobj, methodID, jstr);
+
+    javaVM->DetachCurrentThread();
 }
 
 extern "C"
@@ -104,6 +110,8 @@ Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_connect(JNIEnv *env, job
 
     size_t len = env->GetStringLength(uri_);
 
+    ws_uri = env->GetStringUTFChars(uri_, NULL);
+
     LOGI("%d %s %zu %ld", __LINE__, ws_uri, len, uv_thread);
 
     if (webSocket == nullptr) {
@@ -135,8 +143,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
                 LOGE("%d disconnection", __LINE__);
                 hub.getDefaultGroup<uWS::CLIENT>().close();
                 webSocket = nullptr;
-
-                //(0, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
             });
 
 
@@ -148,7 +154,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     LOGI("jni on load");
     hub.onMessage(
             [](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length, uWS::OpCode opCode) {
-                LOGI("%d %s %d", __LINE__, message, opCode);
+                LOGI("%d %s %d %d", __LINE__, message, opCode, uv_thread_self());
+                cb_to_jvm(message);
             });
 
 

@@ -1,5 +1,7 @@
 package mark.com.websocket_openssl_libuv;
 
+import com.orhanobut.logger.Logger;
+
 /**
  * Created by mark on 17-6-12.
  */
@@ -22,7 +24,10 @@ public class WebSocketClient {
 
     public native void disconnect();
 
-    void onTextMessage(String message) {
+    public void onTextMessage(String message) {
+        System.out.println(message);
+
+        Logger.d(message);
         if (mSocketListener != null) {
             mSocketListener.onTextMessage(message);
         }

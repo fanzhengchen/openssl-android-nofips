@@ -10,7 +10,9 @@
 
 class WebSocketManager {
 private:
-    JavaVM *jvm;
+
+
+
 };
 
 
