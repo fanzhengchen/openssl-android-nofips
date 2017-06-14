@@ -57,6 +57,8 @@ void cb_to_jvm(const char *str) {
     javaVM->DetachCurrentThread();
 }
 
+
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_mark_com_websocket_1openssl_1libuv_WebSocketClient_sendBytes(JNIEnv *env, jobject instance,

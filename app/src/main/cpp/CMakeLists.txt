@@ -31,3 +31,6 @@ target_link_libraries( # Specifies the target library.
                        native-lib
                        uWS
                        log )
+
+add_library(websocket WebSocket.cpp WebSocketManager.cpp)
+target_link_libraries(websocket uWS log)

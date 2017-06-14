@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Websocket-openssl-libuv.iml" filepath="$PROJECT_DIR$/Websocket-openssl-libuv.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/longlink/longlink.iml" filepath="$PROJECT_DIR$/longlink/longlink.iml" />
       <module fileurl="file://$PROJECT_DIR$/openssl-android-nofips.iml" filepath="$PROJECT_DIR$/openssl-android-nofips.iml" />
     </modules>
   </component>
