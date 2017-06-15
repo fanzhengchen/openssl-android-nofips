@@ -39,6 +39,7 @@ void run_hun_in_queue(void *) {
 }
 
 
+
 void cb_to_jvm(const char *str) {
     JNIEnv *env;
 //    javaVM->GetEnv((void **)&env, JNI_VERSION_1_4);
@@ -56,6 +57,7 @@ void cb_to_jvm(const char *str) {
 
     javaVM->DetachCurrentThread();
 }
+
 
 
 

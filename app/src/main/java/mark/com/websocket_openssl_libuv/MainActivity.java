@@ -7,13 +7,16 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
+import com.example.WebSocket;
+
 import org.w3c.dom.Text;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
 
     private static final String WS_URI = "ws://172.16.14.115:20000/webSocket";
-    private WebSocketClient mClient = new WebSocketClient();
+
+    private WebSocket mWebSocket = new WebSocket();
 
     TextView mTextView;
     TextView mBinaryTextView;
@@ -42,7 +45,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (id == R.id.sample_text) {
             getClient().connect(WS_URI);
         } else if (id == R.id.send_plain_text) {
-            getClient().send("wwwwwwwwwwwwwwwwwwwwwwwww text text");
+            getClient().sendPlainText("wwwwwwwwwwwwwwwwwwwwwwwww text text");
         } else if (id == R.id.send_binary_text) {
             byte[] bytes = "bbbbbbbbbbbbbbbbbbbbbbb".getBytes();
             getClient().sendBytes(bytes);
@@ -50,10 +53,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
 
-    public WebSocketClient getClient() {
-        if (mClient == null) {
-            mClient = new WebSocketClient();
+    public WebSocket getClient() {
+        if (mWebSocket == null) {
+            mWebSocket = new WebSocket();
         }
-        return mClient;
+        return mWebSocket;
     }
 }

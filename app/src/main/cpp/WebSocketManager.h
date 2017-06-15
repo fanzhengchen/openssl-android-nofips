@@ -5,15 +5,19 @@
 #ifndef OPENSSL_ANDROID_NOFIPS_WEBSOCKETMANAGER_H
 #define OPENSSL_ANDROID_NOFIPS_WEBSOCKETMANAGER_H
 
-#include "uWS.h"
 #include "jni.h"
 #include "uWS/Hub.h"
+#include "uWS/uWS.h"
+#include <android/log.h>
 
-template<bool isServer>
+#define  LOG_TAG __FILE__
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
 class WebSocketManager {
 private:
-    uWS::Hub *hub;
-    uWS::WebSocket<isServer> *webSocket;
+    uWS::Hub *pHub;
+    uWS::WebSocket<uWS::CLIENT> *webSocket;
     uv_work_t uv_work;
     uv_thread_t uv_thread;
     uv_loop_t uv_loop;
@@ -31,29 +35,8 @@ public:
 
     void sendBytes(const char *);
 
-    void onConnection(
-            std::function<void(uWS::WebSocket<isServer> *, uWS::HttpRequest)> connectionHandler);
+    bool isConnected();
 
-    void
-    onDisconnection(std::function<void(uWS::WebSocket<isServer> *, int, char *, size_t)> handler);
-
-    void onError(std::function<void(typename uWS::Group::errorType)> handler);
-
-    void onPing(std::function<void(uWS::WebSocket<isServer> *, char *, size_t)> hanlder);
-
-    void
-    onMessage(std::function<void(uWS::WebSocket<isServer> *, char *, size_t, uWS::OpCode)> handler);
-
-    void onTransfer(std::function<void(uWS::WebSocket<isServer> *)> handler);
-
-    void connect(std::string uri, void *user, std::map<std::string, std::string> extraHeaders,
-                 int timeoutMs, uWS::Group<uWS::CLIENT> *eh);
-
-    void close(int code, char *message, size_t length);
-
-    void run();
-
-    void uv_run_loop();
 };
 
 

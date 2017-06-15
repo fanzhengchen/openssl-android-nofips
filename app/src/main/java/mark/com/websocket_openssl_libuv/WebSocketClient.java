@@ -2,6 +2,8 @@ package mark.com.websocket_openssl_libuv;
 
 import com.orhanobut.logger.Logger;
 
+import java.net.Socket;
+
 /**
  * Created by mark on 17-6-12.
  */

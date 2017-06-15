@@ -22,15 +22,11 @@ find_library( # Sets the name of the path variable.
 
 add_subdirectory(uWS)
 
-set(lib_dir ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
-#add_library(uv STATIC IMPORTED)
-#set_target_properties(uv PROPERTIES IMPORTED_LOCATION ${lib_dir}/libuv.a)
-
-
 target_link_libraries( # Specifies the target library.
                        native-lib
                        uWS
                        log )
 
-add_library(websocket WebSocket.cpp WebSocketManager.cpp)
+
+add_library(websocket SHARED WebSocket.cpp WebSocketManager.cpp WebSocketManager.h)
 target_link_libraries(websocket uWS log)
