@@ -21,6 +21,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     TextView mTextView;
     TextView mBinaryTextView;
     TextView mPlainText;
+    TextView mCloseView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,12 +30,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mTextView = (TextView) findViewById(R.id.sample_text);
         mBinaryTextView = (TextView) findViewById(R.id.send_binary_text);
         mPlainText = (TextView) findViewById(R.id.send_plain_text);
+        mCloseView = (TextView) findViewById(R.id.close);
 
-        mTextView.setText(System.getenv("os.arch") + " " + Build.DEVICE);
+        mTextView.setText(Build.BOOTLOADER + " "+ Build.DEVICE);
 
         mPlainText.setOnClickListener(this);
         mTextView.setOnClickListener(this);
         mBinaryTextView.setOnClickListener(this);
+        mCloseView.setOnClickListener(this);
 
     }
 
@@ -49,6 +52,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         } else if (id == R.id.send_binary_text) {
             byte[] bytes = "bbbbbbbbbbbbbbbbbbbbbbb".getBytes();
             getClient().sendBytes(bytes);
+        } else if (id == R.id.close) {
+            getClient().close();
         }
     }
 

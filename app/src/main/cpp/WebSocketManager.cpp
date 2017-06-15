@@ -46,3 +46,8 @@ bool WebSocketManager::isConnected() {
     return webSocket != nullptr;
 }
 
+void WebSocketManager::close() {
+    if(webSocket != nullptr){
+        webSocket->close();
+    }
+}

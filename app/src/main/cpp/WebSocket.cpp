@@ -7,22 +7,15 @@
 
 WebSocketManager *webSocketManager = nullptr;
 
-uv_loop_t *uv_loop;
-uv_work_t uv_work;
 uv_thread_t uv_thread;
-
-void uv_work_end(uv_work_t *handler, int status) {
-    LOGI("%d uv work end", __LINE__);
-}
-
-void uv_work_on(uv_work_t *handler) {
-    LOGI("%d uv work on", __LINE__);
-    webSocketManager->getHub()->run();
-}
 
 void uv_init(void *) {
     LOGI("%d uv init", __LINE__);
-    uv_run(uv_loop, UV_RUN_DEFAULT);
+
+
+    LOGI("%d websocketManager", __LINE__);
+
+    webSocketManager->getHub()->run();
 
 }
 
@@ -32,12 +25,14 @@ JNIEXPORT void JNICALL
 Java_com_example_WebSocket_connect(JNIEnv *env, jobject instance, jstring uri_) {
     const char *uri = env->GetStringUTFChars(uri_, 0);
 
+
     if (webSocketManager != nullptr && !webSocketManager->isConnected()) {
-        LOGI("%d connect %s", __LINE__, uri);
         webSocketManager->getHub()->connect(uri);
+        webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().startAutoPing(2000, "");
         uv_thread_create(&uv_thread, uv_init, NULL);
-        uv_queue_work(uv_loop, &uv_work, uv_work_on, uv_work_end);
     }
+
+
     env->ReleaseStringUTFChars(uri_, uri);
 }
 
@@ -47,9 +42,8 @@ JNIEXPORT void JNICALL
 Java_com_example_WebSocket_close(JNIEnv *env, jobject instance) {
 
     if (webSocketManager != nullptr) {
-        char message[] = "close socket";
-        webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close(1000, message,
-                                                                         sizeof(message));
+//        webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close();
+        webSocketManager->close();
     }
 }
 
@@ -82,11 +76,8 @@ Java_com_example_WebSocket_sendBytes(JNIEnv *env, jobject instance, jbyteArray b
 extern "C"
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
-
     LOGI("jni on load");
     webSocketManager = new WebSocketManager();
-
-    LOGI("%d websocketManager", __LINE__);
     webSocketManager->getHub()->onConnection(
             [](uWS::WebSocket<uWS::CLIENT> *ws, uWS::HttpRequest request) {
                 LOGI("%d connection", __LINE__);
@@ -102,6 +93,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
             [](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
                 LOGI("%d on disconnection", __LINE__);
                 webSocketManager->setWebSocket(nullptr);
+                webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close(1000, message,
+                                                                                 sizeof(message));
             });
 
     webSocketManager->getHub()->onMessage(
@@ -111,17 +104,18 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     webSocketManager->getHub()->onPing(
             [](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length) {
-
+                LOGI("%d on ping pong ", __LINE__);
             });
-
-    uv_loop = uv_loop_new();
-//
-    uv_thread_create(&uv_thread, uv_init, NULL);
+//    uv_thread_create(&uv_thread, uv_init, NULL);
 
     return JNI_VERSION_1_4;
 }
 
 extern "C"
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
-    delete (webSocketManager);
+    if (webSocketManager != nullptr) {
+        webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close();
+        delete (webSocketManager);
+    }
+
 }

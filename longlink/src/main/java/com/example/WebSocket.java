@@ -14,5 +14,25 @@ public class WebSocket {
 
     public native void sendBytes(byte[] bytes);
 
+    void onPlainText(String text) {
+
+    }
+
+    void onBytes(byte[] bytes) {
+
+    }
+
+    void onClose(String message) {
+
+    }
+
+    void onConnnection() {
+
+    }
+
+    void onError(String message) {
+
+    }
+
 
 }

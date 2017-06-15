@@ -37,6 +37,7 @@ public:
 
     bool isConnected();
 
+    void close();
 };
 
 

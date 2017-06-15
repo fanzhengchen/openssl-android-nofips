@@ -31,4 +31,12 @@
         android:text="send binary data"
         app:layout_constraintStart_toEndOf="@id/send_plain_text" />
 
+    <TextView
+        android:id="@+id/close"
+        android:layout_width="100dp"
+        android:layout_height="200dp"
+        android:background="@android:color/holo_orange_light"
+        android:gravity="center"
+        android:text="close"
+        app:layout_constraintTop_toBottomOf="@id/sample_text" />
 </android.support.constraint.ConstraintLayout>
