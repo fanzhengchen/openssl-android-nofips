@@ -18,6 +18,7 @@ WebSocketManager::~WebSocketManager() {
 
 WebSocketManager::WebSocketManager() {
     pHub = new uWS::Hub;
+    webSocket = nullptr;
 }
 
 void WebSocketManager::setWebSocket(uWS::WebSocket<uWS::CLIENT> *ws) {
@@ -27,7 +28,6 @@ void WebSocketManager::setWebSocket(uWS::WebSocket<uWS::CLIENT> *ws) {
 uWS::Hub *WebSocketManager::getHub() {
     return pHub;
 }
-
 
 
 void WebSocketManager::sendBytes(const char *data) {
@@ -47,7 +47,7 @@ bool WebSocketManager::isConnected() {
 }
 
 void WebSocketManager::close() {
-    if(webSocket != nullptr){
+    if (webSocket != nullptr) {
         webSocket->close();
     }
 }

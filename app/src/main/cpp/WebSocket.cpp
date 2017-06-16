@@ -3,20 +3,61 @@
 //
 
 #include "WebSocketManager.h"
-#include "uv.h"
 
 WebSocketManager *webSocketManager = nullptr;
 
 uv_thread_t uv_thread;
 
-void uv_init(void *) {
-    LOGI("%d uv init", __LINE__);
+uv_work_t uv_work;
+
+uv_loop_t *uv_loop;
+
+void after_uv_work(uv_work_t *hanlder, int status) {
+    LOGI("%d after uv work", __LINE__);
+}
+
+void do_uv_work(uv_work_t *handler) {
+    LOGI("%d do uv work %d", __LINE__, webSocketManager != nullptr);
+    if (webSocketManager != nullptr) {
+        webSocketManager->getHub()->run();
+    }
+//    uv_close((uv_handle_t *) handler, NULL);
+    LOGI("%d uv work done", __LINE__);
+}
+
+void init(void *) {
+    webSocketManager = new WebSocketManager();
+    webSocketManager->getHub()->onConnection(
+            [](uWS::WebSocket<uWS::CLIENT> *ws, uWS::HttpRequest request) {
+                LOGI("%d connection", __LINE__);
+                webSocketManager->setWebSocket(ws);
+            });
 
 
-    LOGI("%d websocketManager", __LINE__);
+    webSocketManager->getHub()->onError([](void *user) {
+        LOGI("%d on error", __LINE__);
+        webSocketManager->close();
+        webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close();
+    });
 
-    webSocketManager->getHub()->run();
+    webSocketManager->getHub()->onDisconnection(
+            [](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
+                LOGI("%d on disconnection", __LINE__);
+                webSocketManager->setWebSocket(nullptr);
+                webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close();
+            });
 
+    webSocketManager->getHub()->onMessage(
+            [](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length, uWS::OpCode code) {
+                LOGI("%d on message: %s", __LINE__, message);
+            });
+
+    webSocketManager->getHub()->onPing(
+            [](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length) {
+                LOGI("%d on ping pong ", __LINE__);
+            });
+
+    LOGI("%d init %d", __LINE__, uv_thread_self());
 }
 
 
@@ -25,11 +66,15 @@ JNIEXPORT void JNICALL
 Java_com_example_WebSocket_connect(JNIEnv *env, jobject instance, jstring uri_) {
     const char *uri = env->GetStringUTFChars(uri_, 0);
 
-
+    if (webSocketManager != nullptr) {
+        webSocketManager->close();
+    }
+    LOGI("%d connect %s %d", __LINE__, uri, webSocketManager->isConnected());
     if (webSocketManager != nullptr && !webSocketManager->isConnected()) {
         webSocketManager->getHub()->connect(uri);
         webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().startAutoPing(2000, "");
-        uv_thread_create(&uv_thread, uv_init, NULL);
+        uv_queue_work(webSocketManager->getHub()->getLoop(), &uv_work, do_uv_work, after_uv_work);
+        LOGI("%d queue work", __LINE__);
     }
 
 
@@ -77,36 +122,8 @@ extern "C"
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     LOGI("jni on load");
-    webSocketManager = new WebSocketManager();
-    webSocketManager->getHub()->onConnection(
-            [](uWS::WebSocket<uWS::CLIENT> *ws, uWS::HttpRequest request) {
-                LOGI("%d connection", __LINE__);
-                webSocketManager->setWebSocket(ws);
-            });
 
-
-    webSocketManager->getHub()->onError([](void *user) {
-        LOGI("%d on error", __LINE__);
-    });
-
-    webSocketManager->getHub()->onDisconnection(
-            [](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
-                LOGI("%d on disconnection", __LINE__);
-                webSocketManager->setWebSocket(nullptr);
-                webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close(1000, message,
-                                                                                 sizeof(message));
-            });
-
-    webSocketManager->getHub()->onMessage(
-            [](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length, uWS::OpCode code) {
-                LOGI("%d on message: %s", __LINE__, message);
-            });
-
-    webSocketManager->getHub()->onPing(
-            [](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length) {
-                LOGI("%d on ping pong ", __LINE__);
-            });
-//    uv_thread_create(&uv_thread, uv_init, NULL);
+    uv_thread_create(&uv_thread, init, NULL);
 
     return JNI_VERSION_1_4;
 }
@@ -117,5 +134,11 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
         webSocketManager->getHub()->getDefaultGroup<uWS::CLIENT>().close();
         delete (webSocketManager);
     }
+
+    uv_close((uv_handle_t *) &uv_work, NULL);
+
+    uv_stop(uv_loop);
+
+    uv_loop_delete(uv_loop);
 
 }

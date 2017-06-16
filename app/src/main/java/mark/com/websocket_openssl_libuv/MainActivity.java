@@ -27,12 +27,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mTextView = (TextView) findViewById(R.id.sample_text);
+        mTextView = (TextView) findViewById(R.id.connect);
         mBinaryTextView = (TextView) findViewById(R.id.send_binary_text);
         mPlainText = (TextView) findViewById(R.id.send_plain_text);
         mCloseView = (TextView) findViewById(R.id.close);
 
-        mTextView.setText(Build.BOOTLOADER + " "+ Build.DEVICE);
 
         mPlainText.setOnClickListener(this);
         mTextView.setOnClickListener(this);
@@ -45,7 +44,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         int id = v.getId();
-        if (id == R.id.sample_text) {
+        if (id == R.id.connect) {
             getClient().connect(WS_URI);
         } else if (id == R.id.send_plain_text) {
             getClient().sendPlainText("wwwwwwwwwwwwwwwwwwwwwwwww text text");
